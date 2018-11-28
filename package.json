@@ -1,9 +1,11 @@
 {
   "name": "space_explorer",
-  "description": "Online celestial bodies explorer",
+  "description": "Interactive SPA for studying celestial bodies and planets",
   "version": "1.1.0",
-  "author": "Max Kazakov",
+  "author": "Max Kazakov <sbmein@gmail.com> (http://max-kazakov.ru)",
+  "homepage": "http://space-exp.com",
   "license": "MIT",
+  "repository": "github:ag0noize/space-explorer",
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development webpack-dev-server --open --hot",
