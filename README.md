@@ -6,6 +6,10 @@ Current version (1.1) contains 9 animated planet models of our Solar System, mai
 
 It's handled through Vue.js, Three.js and animated with CSS and GreenSock Animation Platform. Colors and shades of the textures are tuned according to true-color photos.
 
+## Important
+
+Current version of the application is built for desktop only. Version for mobile devices will appear later.
+
 ## Installation and local development
 
 Space Explorer uses npm to build versions.
