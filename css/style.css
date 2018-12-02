@@ -1650,6 +1650,18 @@ footer a:hover {
     background: #030404;
 }
 
+.mobile_notification {
+    display: none;
+    color: white;
+    text-align: center;
+    letter-spacing: 1px;
+    width: calc(100% - 50px);
+    font-family: 'Open Sans';
+    line-height: 28px;
+    max-width: 600px;
+}
+
+
 @media (min-width: 320px) and (max-width: 1200px){
     .app {
         padding: 50px 0 40px;

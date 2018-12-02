@@ -3,6 +3,8 @@
     <div id="app" class="app">
 
         <div class="loadscreen" id="loadscreen">
+            <div class="mobile_notification">Sorry, but current version of the site is not working on mobile devices, try to explore from desktop.</div>
+
             <div class="loadscreen_title" id="loadscreen_title">Space Explorer</div>
 
             <div class="preloader" id="preloader">
