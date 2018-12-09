@@ -5,7 +5,10 @@
   "author": "Max Kazakov <sbmein@gmail.com> (http://max-kazakov.ru)",
   "homepage": "http://space-exp.com",
   "license": "MIT",
-  "repository": "github:ag0noize/space-explorer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ag0noize/space-explorer.git"
+  },
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development webpack-dev-server --open --hot",
@@ -36,5 +39,9 @@
     "vue-template-compiler": "^2.4.4",
     "webpack": "^3.6.0",
     "webpack-dev-server": "^2.9.1"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/ag0noize/space-explorer/issues"
+  },
+  "main": "webpack.config.js"
 }
