@@ -1,15 +1,19 @@
-var camera, renderer, scene, stats;
-var mercury, venus, earth, earthPlanet, moon, mars, jupiter, saturn, saturnPlanet, uranus, neptune, pluto;
+let camera, renderer, scene, stats;
+let planets = [];
+let earthPlanet, moon;
 
 export function init(){
+
     // stats = new Stats();
     // stats.setMode(0);
-    // stats.domElement.style.position = 'absolute';
-    // stats.domElement.style.left = '240px';
-    // stats.domElement.style.top = '0px';
+    // stats.domElement.style.cssText = 'position: absolute; left: 240px; top: 0';
     // document.body.appendChild(stats.domElement);
 
-	renderer = new THREE.WebGLRenderer({canvas: document.getElementById('three'), antialias: true, alpha: true});
+	renderer = new THREE.WebGLRenderer({
+		canvas: document.getElementById('three'), 
+		antialias: true, 
+		alpha: true
+	});
 	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -24,16 +28,14 @@ export function init(){
 	// set lights
 	
 	let ambientLight =  new THREE.AmbientLight(0x48545c, 1.5);
-
 	scene.add(ambientLight);
 
 	let pointLight = new THREE.PointLight(0xdfeffa, 1.5, 100);
-			
-	// pointLight.position.set(-10,0,40);
 	pointLight.position.set(-10, 10, 70);
-
 	scene.add(pointLight);
 
+
+	// create loading manager 
 
 	let manager = new THREE.LoadingManager();
 
@@ -49,7 +51,7 @@ export function init(){
 		setTimeout(()=>{
 	
 		    window.scene.children.forEach(function(object){
-		        // if (object.type == 'Group' && object.name != window.initialPlanet){
+
 		        if (object.type == 'Group'){
 
 		            object.children.forEach(function(child){
@@ -69,63 +71,118 @@ export function init(){
 		    document.getElementById('start_btn').classList.add('visible');
 
 		}, 100);
-	
 	};
 
 
 	// planet constructor
 
-	function planetConstructor(options){
-		let planet = new THREE.Group();
+	class Planet {
+		constructor(options){
 
-		let surfGeo = new THREE.SphereGeometry(options.size, 32, 32),
-			surfMap = new THREE.TextureLoader(manager).load(options.surf.map),
-			surfBump = options.surf.bump ? new THREE.TextureLoader(manager).load(options.surf.bump) : false,
-			surfSpec = options.surf.specular ? options.surf.specular : false,
-			surfMat = new THREE.MeshPhongMaterial({map: surfMap, transparent: true, specular: surfSpec, bumpMap: surfBump, shininess: 0, opacity: 1}),
-			surface = new THREE.Mesh(surfGeo, surfMat);
+			this.options = options;
 
-		surface.name = 'surf';
+			this.planet = new THREE.Group();
+			this.surfGeo = new THREE.SphereGeometry(options.size, 32, 32);
+			this.surfMap = new THREE.TextureLoader(manager).load(this.options.surf.map);
+			this.surfBump = this.options.surf.bump ? new THREE.TextureLoader(manager).load(this.options.surf.bump) : false;
+			this.surfSpec = this.options.surf.specular ? this.options.surf.specular : false;
+			
+			this.surfMat = new THREE.MeshPhongMaterial({
+				map: this.surfMap, 
+				transparent: true, 
+				specular: this.surfSpec, 
+				bumpMap: this.surfBump, 
+				shininess: 0, 
+				opacity: 1
+			});
+			
+			this.surface = new THREE.Mesh(this.surfGeo, this.surfMat);
+			this.surface.name = 'surf';
+			this.planet.add(this.surface);
 
-		planet.add(surface);
 
-		if (options.atmo){
-			let atmoGeo = new THREE.SphereGeometry(options.size + 0.07, 32, 32),
-				atmoMap = new THREE.TextureLoader(manager).load(options.atmo.map),
-				atmoMat = new THREE.MeshPhongMaterial({map: atmoMap, transparent: true, opacity: 1}),
-				atmosphere = new THREE.Mesh(atmoGeo, atmoMat);
+			if (this.options.atmo){
 
-			atmosphere.name = 'atmo';
-			planet.add(atmosphere);
+				this.atmoGeo = new THREE.SphereGeometry(this.options.size + 0.07, 32, 32);
+				this.atmoMap = new THREE.TextureLoader(manager).load(this.options.atmo.map);
+				this.atmoMat = new THREE.MeshPhongMaterial({
+					map: this.atmoMap, 
+					transparent: true, 
+					opacity: 1
+				});
+
+				this.atmosphere = new THREE.Mesh(this.atmoGeo, this.atmoMat);
+				this.atmosphere.name = 'atmo';
+				this.planet.add(this.atmosphere);
+			}
+
+
+			if (this.options.atmoGlow){
+
+				this.atmoGlowMap = new THREE.TextureLoader(manager).load(this.options.atmoGlow.map);
+				this.atmoGlowMat = new THREE.SpriteMaterial({
+					map: this.atmoGlowMap, 
+					color: this.options.atmoGlow.color, 
+					blending: THREE.NormalBlending, 
+					opacity: 1
+				});
+
+				this.atmoGlow = new THREE.Sprite(this.atmoGlowMat);
+				this.atmoGlow.scale.set(this.options.atmoGlow.size, this.options.atmoGlow.size);
+				this.atmoGlow.name = 'atmoGlow';
+				this.planet.add(this.atmoGlow);
+			}
+
+			this.planet.name = this.options.name;
+			this.planet.tilt = this.options.tilt;
+			this.planet.period = this.options.period;
+
+			if (this.options.orbitSize){
+
+				this.planet.orbitSize = this.options.orbitSize;
+			}
+
+
+			// orbit and rotation settings
+
+		    this.axis = -this.planet.tilt * Math.PI / 180,
+		    this.speed = 0.0001;
+
+		    // accelerate rotation speed of some planets to make it perceptible
+
+		    if (this.planet.name === 'mercury' || this.planet.name === 'venus'){
+				this.speed = 0.01;
+		    }
+
+		    if (this.planet.name === 'pluto'){
+				this.speed = 0.001;
+		    }
+
+		    this.planet.rotation.order = 'ZXY';
+		    this.planet.rotation.z = this.axis;
+
+		    // change tilt angle of some planets in the name of beauty
+
+		    if (this.planet.name === 'saturn_planet'){
+		    	this.planet.rotation.x = 0.3;
+		    } else if (this.planet.name === 'neptune'){
+		    	this.planet.rotation.x = -0.5;
+		    } else {
+		    	this.planet.rotation.x = 0;
+		    }
+
+			scene.add(this.planet);
 		}
 
-		if (options.atmoGlow){
-			let	atmoGlowMap = new THREE.TextureLoader(manager).load(options.atmoGlow.map),
-				atmoGlowMat = new THREE.SpriteMaterial({map: atmoGlowMap, color: options.atmoGlow.color, blending: THREE.NormalBlending, opacity: 1}),
-				atmoGlow = new THREE.Sprite(atmoGlowMat);
-				atmoGlow.scale.set(options.atmoGlow.size, options.atmoGlow.size);
-
-			atmoGlow.name = 'atmoGlow';
-			planet.add(atmoGlow);
+		rotate(){
+		    this.planet.rotation.y += (this.speed / this.planet['period']) * 2 * Math.PI;
 		}
-
-		planet.name = options.name;
-		planet.tilt = options.tilt;
-		planet.period = options.period;
-
-		if (options.orbitSize){
-			planet.orbitSize = options.orbitSize;
-		}
-
-		scene.add(planet);
-
-		return planet;
 	}
 
 
 // create planets 
 
-	mercury = planetConstructor({
+	let mercury = new Planet({
 		name: 'mercury',
 		size: 10,
 		tilt: 0,
@@ -136,9 +193,11 @@ export function init(){
 		}	
 	});
 
+	planets.push(mercury);
+
 	//
 
-	venus = planetConstructor({
+	let venus = new Planet({
 		name: 'venus',
 		size: 13.9,
 		tilt: 177.3,
@@ -153,11 +212,14 @@ export function init(){
 		}
 	});
 
-	// 
+	planets.push(venus);
 
-	earth = new THREE.Group();
+	//
 
-	earthPlanet = planetConstructor({
+	let earth = new THREE.Group();
+	earth.name = 'earth';
+
+	earthPlanet = new Planet({
 		name: 'earth_planet',
 		size: 14.1,
 		tilt: 25.4,
@@ -176,9 +238,10 @@ export function init(){
 		}
 	});
 
-	earth.add(earthPlanet);
+	planets.push(earthPlanet);
+	earth.add(earthPlanet.planet);
 
-	moon = planetConstructor({
+	moon = new Planet({
 		name: 'moon',
 		size: 1,
 		tilt: 28.3,
@@ -190,13 +253,14 @@ export function init(){
 		}
 	});
 
-	earth.add(moon);
-	earth.name = 'earth';
+	planets.push(moon);
+	earth.add(moon.planet);
+
 	scene.add(earth);
 
-	// 
+	//
 
-	mars = planetConstructor({
+	let mars = new Planet({
 		name: 'mars',
 		size: 12,
 		tilt: 25.2,
@@ -213,9 +277,11 @@ export function init(){
 		}
 	});
 
-	// 
+	planets.push(mars);
 
-	jupiter = planetConstructor({
+	//
+
+	let jupiter = new Planet({
 		name: 'jupiter',
 		size: 18,
 		tilt: 3.1,
@@ -225,12 +291,14 @@ export function init(){
 		}
 	});
 
+	planets.push(jupiter);
+
 	// 
 
-	saturn = new THREE.Group();
+	let saturn = new THREE.Group();
 	saturn.name = 'saturn';
 
-	saturnPlanet = planetConstructor({
+	let saturnPlanet = new Planet({
 		name: 'saturn_planet',
 		size: 17,
 		tilt: 26.7,
@@ -240,7 +308,8 @@ export function init(){
 		}
 	});
 
-	saturn.add(saturnPlanet);
+	planets.push(saturnPlanet);
+	saturn.add(saturnPlanet.planet);
 
 	let saturnRingsGeo = new THREE.RingGeometry(10, 48, 50, 5, 1, Math.PI * 2),
 		saturnRingsMat = new THREE.MeshPhongMaterial({           
@@ -252,7 +321,6 @@ export function init(){
 	        opacity: 1,
 	    });
 
-
 	let saturnRings = new THREE.Mesh(saturnRingsGeo, saturnRingsMat); 
 	saturnRings.rotation.set(-1.39, 0.466, -0.2);
 
@@ -261,10 +329,10 @@ export function init(){
 
     // 
 
-	uranus = new THREE.Group();
+	let uranus = new THREE.Group();
 	uranus.name = 'uranus';
 
-	let uranusPlanet = planetConstructor({
+	let uranusPlanet = new Planet({
 		name: 'uranus_planet',
 		size: 16,
 		tilt: 97.7,
@@ -273,6 +341,9 @@ export function init(){
 			map: 'img/planets/uranus_t.jpg',
 		}
 	});
+
+	planets.push(uranusPlanet);
+	uranus.add(uranusPlanet.planet);
 
 	let uranusRingsGeo = new THREE.RingGeometry(10, 35, 50, 5, 1, Math.PI * 2),
 		uranusRingsMat = new THREE.MeshPhongMaterial({           
@@ -286,14 +357,12 @@ export function init(){
 
 	let uranusRings = new THREE.Mesh(uranusRingsGeo, uranusRingsMat); 
 
-	uranus.add(uranusPlanet);
 	uranus.add(uranusRings);
-
     scene.add(uranus);
 
-    // 
+ 	// 
 
-	neptune = planetConstructor({
+	let neptune = new Planet({
 		name: 'neptune',
 		size: 16,
 		tilt: 28.3,
@@ -303,9 +372,11 @@ export function init(){
 		}
 	});
 
+	planets.push(neptune);
+
 	// 
 
-	pluto = planetConstructor({
+	let pluto = new Planet({
 		name: 'pluto',
 		size: 10,
 		tilt: 122.5,
@@ -316,83 +387,44 @@ export function init(){
 		}
 	});
 
-
-	window.mercury = mercury;
-	window.venus = venus;
-	window.earth = earth;
-	window.mars = mars;
-	window.jupiter = jupiter;
-	window.saturn = saturn;
-	window.uranus = uranus;
-	window.neptune = neptune;
-	window.pluto = pluto;
+	planets.push(pluto);
 }
 
 
-// animate planet's rotation 
+// animate moon orbit
 
-function planetRotation(planet){
-    let axis = -planet.tilt * Math.PI / 180,
-    	speed = 0.0001;
-
-    // accelerate some planets rotation speed to make it visible
-
-    if (planet.name === 'mercury' || planet.name === 'venus'){
-		speed = 0.01;
-    }
-
-    if (planet.name === 'pluto'){
-		speed = 0.001;
-    }
-
-    planet.rotation.order = 'ZXY';
-    planet.rotation.z = axis;
-
-    if (planet.name === 'saturn_planet'){
-    	planet.rotation.x = 0.3;
-    } else if (planet.name === 'neptune'){
-    	planet.rotation.x = -0.5;
-    } else {
-    	planet.rotation.x = 0;
-    }
-
-    planet.rotation.y += (speed / planet['period']) * 2 * Math.PI;
-};
-
-
-// animate moons
-
-var theta = 0,
+let theta = 0,
 	dTheta = 2 * Math.PI / 5000;
 
 function moonOrbit(moon){
-	let orbitSize = moon.orbitSize;
-  	moon.position.x = orbitSize * Math.cos(theta);
-  	moon.position.z = orbitSize * Math.sin(theta);
-};
+	let orbitSize = moon.planet.orbitSize;
+
+  	moon.planet.position.x = orbitSize * Math.cos(theta);
+  	moon.planet.position.z = orbitSize * Math.sin(theta);
+}
 
 
 export function animate(){
+
     // stats.begin();	
+
   	requestAnimationFrame(animate);
 
   	theta += dTheta;
 
-  	earth.children[0].getObjectByName('atmo').rotation.y += 0.0002;
+	planets.forEach(function(planet){
+		planet.rotate();
+	});
 
-	planetRotation(mercury);
-	planetRotation(venus);
-	planetRotation(earth.children[0]);
-	planetRotation(moon);
+  	// animate earth atmosphere
+  
+	earthPlanet.planet.children[1].rotation.y += 0.0002;
+
 	moonOrbit(moon);
-	planetRotation(mars);
-	planetRotation(jupiter);
-	planetRotation(saturn.children[0]);
-	planetRotation(uranus.children[0]);
-	planetRotation(neptune);
-	planetRotation(pluto);
+
 
 	renderer.render(scene, camera);
+
     // stats.end();
 }
 

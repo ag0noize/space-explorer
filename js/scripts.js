@@ -9,6 +9,7 @@ window.onload = function(){
 		return false;
 
 	} else {	
+
 		const initAnimation = new TimelineLite(),
 			  enterAniamtion = new TimelineLite();
 
@@ -25,7 +26,7 @@ window.onload = function(){
 			  		 .to(lsPreloader, 1.5, {autoAlpha: 1, scale: 1, ease: Sine.easeOut, onComplete: ()=>{ init(); animate(); }});
 
 
-		lsBtn.addEventListener('click', ()=>{
+		lsBtn.addEventListener('click', () => {
 
 			let planetTitle = document.querySelector('.planet_title'),
 				readMoreBtn = document.querySelector('.read_more'),
@@ -38,9 +39,25 @@ window.onload = function(){
 		  				  .staggerTo(featuresLeft, 1, {opacity: 1, ease: Power1.easeOut}, 0.1, '-=1')
 		  				  .staggerTo(featuresRight, 1, {opacity: 1, ease: Power1.easeOut}, 0.1, '-=1.3');
 
-		    window[window.initialPlanet].children.forEach(function(child){
-		        TweenMax.to(child.material, 0.3, {delay: 1, opacity: 1, ease: Power1.easeOut});
-		        TweenMax.set(child, {delay: 1, visible: true});
+
+		  	// show initial planet
+
+		  	let initPlanet = window.scene.children.find(planet => planet.name === window.initialPlanet);
+
+		    initPlanet.children.forEach(function(child){
+
+				if (child.type == 'Group'){
+
+				    child.children.forEach(function(subchild){
+				        TweenMax.to(subchild.material, 0.3, {delay: 1, opacity: 1, ease: Power1.easeOut});
+				        TweenMax.set(subchild, {delay: 1, visible: true});
+				    });
+
+				} else {	
+
+				    TweenMax.to(child.material, 0.3, {delay: 1, opacity: 1, ease: Power1.easeOut});
+				    TweenMax.set(child, {delay: 1, visible: true});
+				}
 		    });
 		});
 	}

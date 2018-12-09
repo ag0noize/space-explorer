@@ -205,32 +205,49 @@
         },
 
         watch: {
-            activeModel(nevVal, oldVal){
-                if (oldVal){          
-                    window[oldVal].children.forEach(function(child){
+            activeModel(newVal, oldVal){
+
+                let prevPlanet = window.scene.children.find(planet => planet.name === oldVal),
+                    nextPlanet = window.scene.children.find(planet => planet.name === newVal);
+
+
+                if (oldVal){
+
+                    prevPlanet.children.forEach(function(child){
+
                         if (child.type == 'Group'){
+
                             child.children.forEach(function(subchild){
                                 TweenMax.to(subchild.material, 0.3, {opacity: 0, ease: Power1.easeOut});
                                 TweenMax.set(subchild, {delay: 0.6, visible: false});
                             });
+
                         } else {
+
                             TweenMax.to(child.material, 0.3, {opacity: 0, ease: Power1.easeOut});
                             TweenMax.set(child, {delay: 0.6, visible: false});
                         }
-                    });
+                    });       
                 }
 
-                window[nevVal].children.forEach(function(child){
+
+                nextPlanet.children.forEach(function(child){
+
                     if (child.type == 'Group'){
+
                         child.children.forEach(function(subchild){
                             TweenMax.to(subchild.material, 0.3, {delay: 0.6, opacity: 1, ease: Power1.easeOut});
                             TweenMax.set(subchild, {delay: 0.6, visible: true});
                         });
+
                     } else {
+
                         TweenMax.to(child.material, 0.3, {delay: 0.6, opacity: 1, ease: Power1.easeOut});
                         TweenMax.set(child, {delay: 0.6, visible: true});
+                        
                     }
                 });
+
             }
         }
     }
